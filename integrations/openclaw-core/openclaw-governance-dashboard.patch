@@ -1,0 +1,1108 @@
+commit 3030080ab11680fd37e3fe98d632409043e8db8f
+Author: KiroMusic Developer <kiromusic@example.com>
+Date:   Sun Mar 15 19:28:48 2026 +0800
+
+    Governance: ship dashboard plugin and release flow
+
+diff --git a/src/plugins/config-state.test.ts b/src/plugins/config-state.test.ts
+index ccebd3131..4442c50bc 100644
+--- a/src/plugins/config-state.test.ts
++++ b/src/plugins/config-state.test.ts
+@@ -50,6 +50,17 @@ describe("normalizePluginsConfig", () => {
+ });
+ 
+ describe("resolveEffectiveEnableState", () => {
++  it("enables governance-dashboard by default when bundled", () => {
++    const normalized = normalizePluginsConfig({ enabled: true });
++    const state = resolveEffectiveEnableState({
++      id: "governance-dashboard",
++      origin: "bundled",
++      config: normalized,
++      rootConfig: {},
++    });
++    expect(state).toEqual({ enabled: true });
++  });
++
+   function resolveBundledTelegramState(config: Parameters<typeof normalizePluginsConfig>[0]) {
+     const normalized = normalizePluginsConfig(config);
+     return resolveEffectiveEnableState({
+diff --git a/src/plugins/config-state.ts b/src/plugins/config-state.ts
+index f2626e705..041119915 100644
+--- a/src/plugins/config-state.ts
++++ b/src/plugins/config-state.ts
+@@ -16,6 +16,7 @@ export type NormalizedPluginsConfig = {
+ 
+ export const BUNDLED_ENABLED_BY_DEFAULT = new Set<string>([
+   "device-pair",
++  "governance-dashboard",
+   "phone-control",
+   "talk-voice",
+ ]);
+diff --git a/ui/src/i18n/locales/de.ts b/ui/src/i18n/locales/de.ts
+index e0537c332..4b7abb4dc 100644
+--- a/ui/src/i18n/locales/de.ts
++++ b/ui/src/i18n/locales/de.ts
+@@ -26,6 +26,7 @@ export const de: TranslationMap = {
+     agentDashboard: "Agent-Dashboard",
+     agents: "Agenten",
+     overview: "Übersicht",
++    governance: "Governance",
+     channels: "Kanäle",
+     instances: "Instanzen",
+     sessions: "Sitzungen",
+@@ -43,6 +44,8 @@ export const de: TranslationMap = {
+     agentDashboard: "Kartenansicht zum schnellen Erfassen von Rollen und Fähigkeiten der Agenten.",
+     agents: "Agent-Arbeitsbereiche, Tools und Identitäten verwalten.",
+     overview: "Gateway-Status, Einstiegspunkte und eine schnelle Zustandsprüfung.",
++    governance:
++      "Architekturleitplanken, Ownership-Signale und Repository-Gesundheit in einer Ansicht.",
+     channels: "Kanäle und Einstellungen verwalten.",
+     instances: "Präsenzsignale von verbundenen Clients und Geräten.",
+     sessions: "Aktive Sitzungen inspizieren und Standardeinstellungen pro Sitzung anpassen.",
+diff --git a/ui/src/i18n/locales/en.ts b/ui/src/i18n/locales/en.ts
+index 12ba49519..f59bf3a3f 100644
+--- a/ui/src/i18n/locales/en.ts
++++ b/ui/src/i18n/locales/en.ts
+@@ -26,6 +26,7 @@ export const en: TranslationMap = {
+     agentDashboard: "Agent Dashboard",
+     agents: "Agents",
+     overview: "Overview",
++    governance: "Governance",
+     channels: "Channels",
+     instances: "Instances",
+     sessions: "Sessions",
+@@ -43,6 +44,7 @@ export const en: TranslationMap = {
+     agentDashboard: "Visual card wall for scanning agent roles and capabilities.",
+     agents: "Manage agent workspaces, tools, and identities.",
+     overview: "Gateway status, entry points, and a fast health read.",
++    governance: "Architecture guardrails, ownership signals, and repo health in one view.",
+     channels: "Manage channels and settings.",
+     instances: "Presence beacons from connected clients and nodes.",
+     sessions: "Inspect active sessions and adjust per-session defaults.",
+diff --git a/ui/src/i18n/locales/pt-BR.ts b/ui/src/i18n/locales/pt-BR.ts
+index 69bfce5bc..a3ddac3b9 100644
+--- a/ui/src/i18n/locales/pt-BR.ts
++++ b/ui/src/i18n/locales/pt-BR.ts
+@@ -26,6 +26,7 @@ export const pt_BR: TranslationMap = {
+     agentDashboard: "Dashboard de Agentes",
+     agents: "Agentes",
+     overview: "Visão Geral",
++    governance: "Governança",
+     channels: "Canais",
+     instances: "Instâncias",
+     sessions: "Sessões",
+@@ -40,9 +41,12 @@ export const pt_BR: TranslationMap = {
+     logs: "Logs",
+   },
+   subtitles: {
+-    agentDashboard: "Painel em cartões para ver rapidamente o papel e as capacidades de cada agente.",
++    agentDashboard:
++      "Painel em cartões para ver rapidamente o papel e as capacidades de cada agente.",
+     agents: "Gerenciar espaços de trabalho, ferramentas e identidades de agentes.",
+     overview: "Status do gateway, pontos de entrada e leitura rápida de saúde.",
++    governance:
++      "Guardrails de arquitetura, sinais de ownership e saúde do repositório em uma só visão.",
+     channels: "Gerenciar canais e configurações.",
+     instances: "Beacons de presença de clientes e nós conectados.",
+     sessions: "Inspecionar sessões ativas e ajustar padrões por sessão.",
+diff --git a/ui/src/i18n/locales/zh-CN.ts b/ui/src/i18n/locales/zh-CN.ts
+index 1f29e0191..7fff21600 100644
+--- a/ui/src/i18n/locales/zh-CN.ts
++++ b/ui/src/i18n/locales/zh-CN.ts
+@@ -26,6 +26,7 @@ export const zh_CN: TranslationMap = {
+     agentDashboard: "代理看板",
+     agents: "代理",
+     overview: "概览",
++    governance: "治理",
+     channels: "频道",
+     instances: "实例",
+     sessions: "会话",
+@@ -43,6 +44,7 @@ export const zh_CN: TranslationMap = {
+     agentDashboard: "用卡片墙快速查看每个 agent 的职责和能力。",
+     agents: "管理代理工作区、工具和身份。",
+     overview: "网关状态、入口点和快速健康读取。",
++    governance: "在一个视图里查看架构护栏、责任归属信号和仓库健康度。",
+     channels: "管理频道和设置。",
+     instances: "来自已连接客户端和节点的在线信号。",
+     sessions: "检查活动会话并调整每个会话的默认设置。",
+diff --git a/ui/src/i18n/locales/zh-TW.ts b/ui/src/i18n/locales/zh-TW.ts
+index 6cfde143f..287ed38ee 100644
+--- a/ui/src/i18n/locales/zh-TW.ts
++++ b/ui/src/i18n/locales/zh-TW.ts
+@@ -26,6 +26,7 @@ export const zh_TW: TranslationMap = {
+     agentDashboard: "代理看板",
+     agents: "代理",
+     overview: "概覽",
++    governance: "治理",
+     channels: "頻道",
+     instances: "實例",
+     sessions: "會話",
+@@ -43,6 +44,7 @@ export const zh_TW: TranslationMap = {
+     agentDashboard: "用卡片牆快速查看每個 agent 的職責和能力。",
+     agents: "管理代理工作區、工具和身份。",
+     overview: "網關狀態、入口點和快速健康讀取。",
++    governance: "在單一視圖中查看架構護欄、責任歸屬訊號與倉庫健康度。",
+     channels: "管理頻道和設置。",
+     instances: "來自已連接客戶端和節點的在線信號。",
+     sessions: "檢查活動會話並調整每個會話的默認設置。",
+diff --git a/ui/src/styles/components.css b/ui/src/styles/components.css
+index 431197d2c..fe063eed7 100644
+--- a/ui/src/styles/components.css
++++ b/ui/src/styles/components.css
+@@ -3564,6 +3564,150 @@
+   grid-template-columns: 1fr;
+ }
+ 
++.governance-header {
++  display: flex;
++  align-items: flex-start;
++  justify-content: space-between;
++  gap: 16px;
++}
++
++.governance-actions {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 10px;
++}
++
++.governance-cards,
++.governance-grid {
++  display: grid;
++  gap: 16px;
++  margin-top: 16px;
++}
++
++.governance-cards {
++  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
++}
++
++.governance-grid {
++  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
++}
++
++.governance-stat {
++  border: 1px solid var(--border);
++  border-radius: 18px;
++  padding: 16px;
++  background: var(--surface);
++}
++
++.governance-stat--ok {
++  border-color: color-mix(in srgb, var(--success, #15803d) 32%, var(--border));
++}
++
++.governance-stat--warn {
++  border-color: color-mix(in srgb, var(--warning, #d97706) 32%, var(--border));
++}
++
++.governance-stat--alert {
++  border-color: color-mix(in srgb, var(--danger, #dc2626) 36%, var(--border));
++}
++
++.governance-stat__label {
++  font-size: 12px;
++  text-transform: uppercase;
++  letter-spacing: 0.06em;
++  color: var(--muted);
++}
++
++.governance-stat__value {
++  margin-top: 10px;
++  font-size: 28px;
++  font-weight: 700;
++}
++
++.governance-stack,
++.governance-list {
++  display: grid;
++  gap: 12px;
++}
++
++.governance-panel,
++.governance-issue {
++  border: 1px solid var(--border);
++  border-radius: 16px;
++  padding: 14px 16px;
++  background: var(--surface-2, rgba(255, 255, 255, 0.03));
++}
++
++.governance-panel__top {
++  display: flex;
++  align-items: center;
++  justify-content: space-between;
++  gap: 12px;
++}
++
++.governance-panel__title,
++.governance-list__title {
++  font-weight: 600;
++}
++
++.governance-panel__body {
++  margin-top: 8px;
++  line-height: 1.5;
++}
++
++.governance-list__row {
++  display: flex;
++  align-items: flex-start;
++  justify-content: space-between;
++  gap: 14px;
++  border: 1px solid var(--border);
++  border-radius: 14px;
++  padding: 12px 14px;
++}
++
++.governance-list__metric {
++  white-space: nowrap;
++  color: var(--muted);
++  font-size: 13px;
++}
++
++.governance-meta {
++  margin-top: 8px;
++  color: var(--muted);
++  font-size: 13px;
++  line-height: 1.5;
++}
++
++.governance-tagrow {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 8px;
++  margin-top: 10px;
++}
++
++.governance-tag {
++  display: inline-flex;
++  align-items: center;
++  border: 1px solid var(--border);
++  border-radius: 999px;
++  padding: 4px 9px;
++  font-size: 12px;
++}
++
++.governance-empty {
++  padding: 14px 0;
++  color: var(--muted);
++}
++
++.governance-codeblock {
++  margin-top: 14px;
++  border: 1px solid var(--border);
++  border-radius: 14px;
++  padding: 12px 14px;
++  display: grid;
++  gap: 8px;
++}
++
+ @container (min-width: 900px) {
+   .skills-grid {
+     grid-template-columns: repeat(2, minmax(0, 1fr));
+diff --git a/ui/src/ui/app-render.ts b/ui/src/ui/app-render.ts
+index 1d2ab1bd2..f57a96228 100644
+--- a/ui/src/ui/app-render.ts
++++ b/ui/src/ui/app-render.ts
+@@ -5,12 +5,12 @@ import { refreshChatAvatar } from "./app-chat.ts";
+ import { renderUsageTab } from "./app-render-usage-tab.ts";
+ import { renderChatControls, renderTab, renderThemeToggle } from "./app-render.helpers.ts";
+ import type { AppViewState } from "./app-view-state.ts";
+-import { loadAgentFileContent, loadAgentFiles, saveAgentFile } from "./controllers/agent-files.ts";
+-import { loadAgentDashboardAgentData } from "./controllers/agent-dashboard.ts";
+ import {
+   loadAgentDashboardRuntime,
+   loadAgentDashboardRuntimeRoster,
+ } from "./controllers/agent-dashboard-runtime.ts";
++import { loadAgentDashboardAgentData } from "./controllers/agent-dashboard.ts";
++import { loadAgentFileContent, loadAgentFiles, saveAgentFile } from "./controllers/agent-files.ts";
+ import { loadAgentIdentities, loadAgentIdentity } from "./controllers/agent-identity.ts";
+ import { loadAgentSkills } from "./controllers/agent-skills.ts";
+ import { loadAgents, loadToolsCatalog } from "./controllers/agents.ts";
+@@ -57,6 +57,7 @@ import {
+   saveExecApprovals,
+   updateExecApprovalsFormValue,
+ } from "./controllers/exec-approvals.ts";
++import { hasGovernanceSupport } from "./controllers/governance.ts";
+ import { loadLogs } from "./controllers/logs.ts";
+ import { loadNodes } from "./controllers/nodes.ts";
+ import { loadPresence } from "./controllers/presence.ts";
+@@ -72,8 +73,8 @@ import { loadTasks } from "./controllers/tasks.ts";
+ import { buildExternalLinkRel, EXTERNAL_LINK_TARGET } from "./external-link.ts";
+ import { icons } from "./icons.ts";
+ import { normalizeBasePath, TAB_GROUPS, subtitleForTab, titleForTab } from "./navigation.ts";
+-import { resolveConfiguredCronModelSuggestions, sortLocaleStrings } from "./views/agents-utils.ts";
+ import { renderAgentDashboard } from "./views/agent-dashboard.ts";
++import { resolveConfiguredCronModelSuggestions, sortLocaleStrings } from "./views/agents-utils.ts";
+ import { renderAgents } from "./views/agents.ts";
+ import { renderChannels } from "./views/channels.ts";
+ import { renderChat } from "./views/chat.ts";
+@@ -82,6 +83,7 @@ import { renderCron } from "./views/cron.ts";
+ import { renderDebug } from "./views/debug.ts";
+ import { renderExecApprovalPrompt } from "./views/exec-approval.ts";
+ import { renderGatewayUrlConfirmation } from "./views/gateway-url-confirmation.ts";
++import { renderGovernance } from "./views/governance.ts";
+ import { renderInstances } from "./views/instances.ts";
+ import { renderLogs } from "./views/logs.ts";
+ import { renderNodes } from "./views/nodes.ts";
+@@ -205,6 +207,7 @@ export function renderApp(state: AppViewState) {
+     state.cronForm.deliveryChannel && state.cronForm.deliveryChannel.trim()
+       ? state.cronForm.deliveryChannel.trim()
+       : "last";
++  const governanceSupported = hasGovernanceSupport(state);
+   const jobToSuggestions = state.cronJobs
+     .map((job) => normalizeSuggestionValue(job.delivery?.to))
+     .filter(Boolean);
+@@ -371,6 +374,20 @@ export function renderApp(state: AppViewState) {
+             : nothing
+         }
+ 
++        ${
++          state.tab === "governance"
++            ? renderGovernance({
++                loading: state.governanceLoading,
++                error: state.governanceError,
++                supported: governanceSupported,
++                result: state.governanceResult,
++                onRefresh: (force) => {
++                  void state.handleLoadGovernance(Boolean(force));
++                },
++              })
++            : nothing
++        }
++
+         ${
+           state.tab === "channels"
+             ? renderChannels({
+diff --git a/ui/src/ui/app-settings.ts b/ui/src/ui/app-settings.ts
+index 7d9e3f99f..ca6432910 100644
+--- a/ui/src/ui/app-settings.ts
++++ b/ui/src/ui/app-settings.ts
+@@ -9,11 +9,11 @@ import {
+ } from "./app-polling.ts";
+ import { scheduleChatScroll, scheduleLogsScroll } from "./app-scroll.ts";
+ import type { OpenClawApp } from "./app.ts";
+-import { loadAgentDashboardAgentData } from "./controllers/agent-dashboard.ts";
+ import {
+   loadAgentDashboardRuntime,
+   loadAgentDashboardRuntimeRoster,
+ } from "./controllers/agent-dashboard-runtime.ts";
++import { loadAgentDashboardAgentData } from "./controllers/agent-dashboard.ts";
+ import { loadAgentIdentities, loadAgentIdentity } from "./controllers/agent-identity.ts";
+ import { loadAgentSkills } from "./controllers/agent-skills.ts";
+ import { loadAgents, loadToolsCatalog } from "./controllers/agents.ts";
+@@ -28,6 +28,7 @@ import {
+ import { loadDebug } from "./controllers/debug.ts";
+ import { loadDevices } from "./controllers/devices.ts";
+ import { loadExecApprovals } from "./controllers/exec-approvals.ts";
++import { loadGovernance } from "./controllers/governance.ts";
+ import { loadLogs } from "./controllers/logs.ts";
+ import { loadNodes } from "./controllers/nodes.ts";
+ import { loadPresence } from "./controllers/presence.ts";
+@@ -213,6 +214,9 @@ export async function refreshActiveTab(host: SettingsHost) {
+   if (host.tab === "channels") {
+     await loadChannelsTab(host);
+   }
++  if (host.tab === "governance") {
++    await loadGovernance(host as unknown as OpenClawApp);
++  }
+   if (host.tab === "instances") {
+     await loadPresence(host as unknown as OpenClawApp);
+   }
+diff --git a/ui/src/ui/app-view-state.ts b/ui/src/ui/app-view-state.ts
+index 2085811b8..c239536d8 100644
+--- a/ui/src/ui/app-view-state.ts
++++ b/ui/src/ui/app-view-state.ts
+@@ -1,5 +1,6 @@
+ import type { EventLogEntry } from "./app-events.ts";
+ import type { CompactionStatus, FallbackStatus } from "./app-tool-stream.ts";
++import type { AgentDashboardRuntimeSnapshot } from "./controllers/agent-dashboard-runtime.ts";
+ import type { CronModelSuggestionsState, CronState } from "./controllers/cron.ts";
+ import type { DevicePairingList } from "./controllers/devices.ts";
+ import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
+@@ -17,6 +18,7 @@ import type {
+   ChannelsStatusSnapshot,
+   ConfigSnapshot,
+   ConfigUiHints,
++  GovernanceSnapshotResult,
+   HealthSnapshot,
+   LogEntry,
+   LogLevel,
+@@ -34,7 +36,6 @@ import type {
+ import type { ChatAttachment, ChatQueueItem } from "./ui-types.ts";
+ import type { NostrProfileFormState } from "./views/channels.nostr-profile-form.ts";
+ import type { SessionLogEntry } from "./views/usage.ts";
+-import type { AgentDashboardRuntimeSnapshot } from "./controllers/agent-dashboard-runtime.ts";
+ 
+ export type AppViewState = {
+   settings: UiSettings;
+@@ -176,6 +177,9 @@ export type AppViewState = {
+   tasksAgentId: string;
+   tasksStatuses: string[];
+   tasksSelectedId: string | null;
++  governanceLoading: boolean;
++  governanceResult: GovernanceSnapshotResult | null;
++  governanceError: string | null;
+   agentDashboardSessionKey: string | null;
+   agentDashboardTimeSeries: SessionUsageTimeSeries | null;
+   agentDashboardTimeSeriesLoading: boolean;
+@@ -334,6 +338,7 @@ export type AppViewState = {
+     handleSessionsLoad: () => Promise<void>;
+     handleSessionsPatch: (key: string, patch: unknown) => Promise<void>;
+     handleLoadTasks: () => Promise<void>;
++    handleLoadGovernance: (force?: boolean) => Promise<void>;
+     handleLoadAgentDashboardRuntime: () => Promise<void>;
+     handleAgentDashboardToggleEnabled: (agentId: string, enabled: boolean) => Promise<void>;
+     handleOpenAgentDashboardConsole: (agentId: string) => void;
+diff --git a/ui/src/ui/app.ts b/ui/src/ui/app.ts
+index a658d29e4..8be7ea4aa 100644
+--- a/ui/src/ui/app.ts
++++ b/ui/src/ui/app.ts
+@@ -1,5 +1,6 @@
+ import { LitElement } from "lit";
+ import { customElement, state } from "lit/decorators.js";
++import { buildAgentMainSessionKey } from "../../../src/routing/session-key.js";
+ import { i18n, I18nController, isSupportedLocale } from "../i18n/index.ts";
+ import {
+   handleChannelConfigReload as handleChannelConfigReloadInternal,
+@@ -52,20 +53,20 @@ import {
+ } from "./app-tool-stream.ts";
+ import type { AppViewState } from "./app-view-state.ts";
+ import { normalizeAssistantIdentity } from "./assistant-identity.ts";
+-import { loadAssistantIdentity as loadAssistantIdentityInternal } from "./controllers/assistant-identity.ts";
+ import { loadAgentDashboardRuntime } from "./controllers/agent-dashboard-runtime.ts";
+ import { dispatchAgentTask, updateAgentEnabled } from "./controllers/agents.ts";
++import { loadAssistantIdentity as loadAssistantIdentityInternal } from "./controllers/assistant-identity.ts";
+ import type { CronFieldErrors } from "./controllers/cron.ts";
+ import type { DevicePairingList } from "./controllers/devices.ts";
+ import type { ExecApprovalRequest } from "./controllers/exec-approval.ts";
+ import type { ExecApprovalsFile, ExecApprovalsSnapshot } from "./controllers/exec-approvals.ts";
++import { loadGovernance } from "./controllers/governance.ts";
+ import type { SkillMessage } from "./controllers/skills.ts";
++import { importSkillFromFile, importSkillFromUrl } from "./controllers/skills.ts";
+ import { loadTasks } from "./controllers/tasks.ts";
+ import { cancelTaskWake, ensureTaskWake, updateTaskStatus } from "./controllers/tasks.ts";
+-import { importSkillFromFile, importSkillFromUrl } from "./controllers/skills.ts";
+ import type { GatewayBrowserClient, GatewayHelloOk } from "./gateway.ts";
+ import type { Tab } from "./navigation.ts";
+-import { buildAgentMainSessionKey } from "../../../src/routing/session-key.js";
+ import { loadSettings, type UiSettings } from "./storage.ts";
+ import type { ResolvedTheme, ThemeMode } from "./theme.ts";
+ import type {
+@@ -275,6 +276,9 @@ export class OpenClawApp extends LitElement {
+   @state() tasksAgentId = "";
+   @state() tasksStatuses: string[] = [];
+   @state() tasksSelectedId: string | null = null;
++  @state() governanceLoading = false;
++  @state() governanceResult: import("./types.js").GovernanceSnapshotResult | null = null;
++  @state() governanceError: string | null = null;
+   @state() agentDashboardSessionKey: string | null = null;
+   @state() agentDashboardTimeSeries: import("./types.js").SessionUsageTimeSeries | null = null;
+   @state() agentDashboardTimeSeriesLoading = false;
+@@ -528,6 +532,10 @@ export class OpenClawApp extends LitElement {
+     await loadTasks(this);
+   }
+ 
++  async handleLoadGovernance(force = false) {
++    await loadGovernance(this, { force });
++  }
++
+   async handleLoadAgentDashboardRuntime() {
+     await loadAgentDashboardRuntime(this);
+   }
+diff --git a/ui/src/ui/controllers/governance.test.ts b/ui/src/ui/controllers/governance.test.ts
+new file mode 100644
+index 000000000..0c3891e35
+--- /dev/null
++++ b/ui/src/ui/controllers/governance.test.ts
+@@ -0,0 +1,58 @@
++import { describe, expect, it, vi } from "vitest";
++import { hasGovernanceSupport, loadGovernance } from "./governance.ts";
++
++describe("hasGovernanceSupport", () => {
++  it("detects the governance snapshot method", () => {
++    expect(
++      hasGovernanceSupport({
++        hello: {
++          type: "hello-ok",
++          protocol: 3,
++          features: { methods: ["health", "governance.snapshot"] },
++        },
++      }),
++    ).toBe(true);
++    expect(
++      hasGovernanceSupport({
++        hello: {
++          type: "hello-ok",
++          protocol: 3,
++          features: { methods: ["health"] },
++        },
++      }),
++    ).toBe(false);
++  });
++});
++
++describe("loadGovernance", () => {
++  it("loads the governance snapshot when supported", async () => {
++    const request = vi.fn().mockResolvedValue({
++      available: true,
++      pluginId: "governance-dashboard",
++      refreshedAt: new Date(0).toISOString(),
++      config: {
++        refreshIntervalMs: 1000,
++        largeFileLineThreshold: 500,
++        hotspotLimit: 12,
++      },
++      snapshot: null,
++    });
++    const state = {
++      client: { request },
++      connected: true,
++      hello: {
++        type: "hello-ok" as const,
++        protocol: 3,
++        features: { methods: ["governance.snapshot"] },
++      },
++      governanceLoading: false,
++      governanceResult: null,
++      governanceError: null,
++    };
++
++    await loadGovernance(state, { force: true });
++
++    expect(request).toHaveBeenCalledWith("governance.snapshot", { force: true });
++    expect(state.governanceResult?.pluginId).toBe("governance-dashboard");
++  });
++});
+diff --git a/ui/src/ui/controllers/governance.ts b/ui/src/ui/controllers/governance.ts
+new file mode 100644
+index 000000000..09f2f473a
+--- /dev/null
++++ b/ui/src/ui/controllers/governance.ts
+@@ -0,0 +1,42 @@
++import type { GatewayHelloOk, GatewayBrowserClient } from "../gateway.ts";
++import type { GovernanceSnapshotResult } from "../types.ts";
++
++export type GovernanceState = {
++  client: GatewayBrowserClient | null;
++  connected: boolean;
++  hello: GatewayHelloOk | null;
++  governanceLoading: boolean;
++  governanceResult: GovernanceSnapshotResult | null;
++  governanceError: string | null;
++};
++
++export function hasGovernanceSupport(state: Pick<GovernanceState, "hello">): boolean {
++  const methods = state.hello?.features?.methods;
++  return Array.isArray(methods) && methods.includes("governance.snapshot");
++}
++
++export async function loadGovernance(state: GovernanceState, options?: { force?: boolean }) {
++  if (!state.client || !state.connected) {
++    return;
++  }
++  if (!hasGovernanceSupport(state)) {
++    state.governanceResult = null;
++    state.governanceError = null;
++    return;
++  }
++  if (state.governanceLoading) {
++    return;
++  }
++  state.governanceLoading = true;
++  state.governanceError = null;
++  try {
++    const res = await state.client.request<GovernanceSnapshotResult>("governance.snapshot", {
++      force: options?.force === true,
++    });
++    state.governanceResult = res;
++  } catch (err) {
++    state.governanceError = String(err);
++  } finally {
++    state.governanceLoading = false;
++  }
++}
+diff --git a/ui/src/ui/navigation.test.ts b/ui/src/ui/navigation.test.ts
+index 765a46efd..9767c1511 100644
+--- a/ui/src/ui/navigation.test.ts
++++ b/ui/src/ui/navigation.test.ts
+@@ -29,6 +29,7 @@ describe("iconForTab", () => {
+     expect(iconForTab("agentDashboard")).toBe("brain");
+     expect(iconForTab("chat")).toBe("messageSquare");
+     expect(iconForTab("overview")).toBe("barChart");
++    expect(iconForTab("governance")).toBe("puzzle");
+     expect(iconForTab("channels")).toBe("link");
+     expect(iconForTab("instances")).toBe("radio");
+     expect(iconForTab("sessions")).toBe("fileText");
+@@ -60,6 +61,7 @@ describe("titleForTab", () => {
+     expect(titleForTab("agentDashboard")).toBe("Agent Dashboard");
+     expect(titleForTab("chat")).toBe("Chat");
+     expect(titleForTab("overview")).toBe("Overview");
++    expect(titleForTab("governance")).toBe("Governance");
+     expect(titleForTab("cron")).toBe("Cron Jobs");
+   });
+ });
+@@ -121,6 +123,7 @@ describe("pathForTab", () => {
+     expect(pathForTab("agentDashboard")).toBe("/agent-dashboard");
+     expect(pathForTab("chat")).toBe("/chat");
+     expect(pathForTab("overview")).toBe("/overview");
++    expect(pathForTab("governance")).toBe("/governance");
+   });
+ 
+   it("prepends base path", () => {
+@@ -134,6 +137,7 @@ describe("tabFromPath", () => {
+     expect(tabFromPath("/agent-dashboard")).toBe("agentDashboard");
+     expect(tabFromPath("/chat")).toBe("chat");
+     expect(tabFromPath("/overview")).toBe("overview");
++    expect(tabFromPath("/governance")).toBe("governance");
+     expect(tabFromPath("/sessions")).toBe("sessions");
+   });
+ 
+@@ -153,6 +157,7 @@ describe("tabFromPath", () => {
+   it("is case-insensitive", () => {
+     expect(tabFromPath("/CHAT")).toBe("chat");
+     expect(tabFromPath("/Overview")).toBe("overview");
++    expect(tabFromPath("/Governance")).toBe("governance");
+   });
+ });
+ 
+@@ -164,6 +169,7 @@ describe("inferBasePathFromPathname", () => {
+   it("returns empty string for direct tab path", () => {
+     expect(inferBasePathFromPathname("/chat")).toBe("");
+     expect(inferBasePathFromPathname("/overview")).toBe("");
++    expect(inferBasePathFromPathname("/governance")).toBe("");
+   });
+ 
+   it("infers base path from nested paths", () => {
+diff --git a/ui/src/ui/navigation.ts b/ui/src/ui/navigation.ts
+index 2c1982ee9..b1a5c53ab 100644
+--- a/ui/src/ui/navigation.ts
++++ b/ui/src/ui/navigation.ts
+@@ -5,7 +5,7 @@ export const TAB_GROUPS = [
+   { label: "chat", tabs: ["chat"] },
+   {
+     label: "control",
+-    tabs: ["overview", "channels", "instances", "sessions", "tasks", "usage", "cron"],
++    tabs: ["overview", "governance", "channels", "instances", "sessions", "tasks", "usage", "cron"],
+   },
+   { label: "agent", tabs: ["agentDashboard", "agents", "skills", "nodes"] },
+   { label: "settings", tabs: ["config", "debug", "logs"] },
+@@ -15,6 +15,7 @@ export type Tab =
+   | "agentDashboard"
+   | "agents"
+   | "overview"
++  | "governance"
+   | "channels"
+   | "instances"
+   | "sessions"
+@@ -32,6 +33,7 @@ const TAB_PATHS: Record<Tab, string> = {
+   agentDashboard: "/agent-dashboard",
+   agents: "/agents",
+   overview: "/overview",
++  governance: "/governance",
+   channels: "/channels",
+   instances: "/instances",
+   sessions: "/sessions",
+@@ -137,6 +139,8 @@ export function iconForTab(tab: Tab): IconName {
+       return "messageSquare";
+     case "overview":
+       return "barChart";
++    case "governance":
++      return "puzzle";
+     case "channels":
+       return "link";
+     case "instances":
+diff --git a/ui/src/ui/types.ts b/ui/src/ui/types.ts
+index 388270ecb..15563ed6a 100644
+--- a/ui/src/ui/types.ts
++++ b/ui/src/ui/types.ts
+@@ -541,6 +541,95 @@ export type TaskGetResult = {
+   task: GatewayTaskRow;
+ };
+ 
++export type GovernanceCardTone = "neutral" | "ok" | "warn" | "alert";
++
++export type GovernanceSummaryCard = {
++  id: string;
++  label: string;
++  value: string;
++  helper?: string;
++  tone?: GovernanceCardTone;
++};
++
++export type GovernanceGuardrail = {
++  id: string;
++  label: string;
++  status: "ok" | "warn" | "missing";
++  detail: string;
++};
++
++export type GovernanceIssue = {
++  id: string;
++  severity: "high" | "medium" | "low";
++  title: string;
++  detail: string;
++  path?: string;
++  action?: string;
++};
++
++export type GovernanceHotspot = {
++  path: string;
++  lines: number;
++  category?: string;
++};
++
++export type GovernanceDomain = {
++  id: string;
++  label: string;
++  description?: string;
++  maturity?: string;
++  owners?: string[];
++  paths?: string[];
++  fileCount?: number;
++  largeFileCount?: number;
++  issueCount?: number;
++};
++
++export type GovernanceArtifact = {
++  id: string;
++  label: string;
++  path: string;
++  kind: "domain-map" | "capability" | "adr" | "script";
++};
++
++export type GovernanceSnapshot = {
++  generatedAt: string;
++  repoRoot?: string | null;
++  summary: {
++    totalFiles: number;
++    tsFiles: number;
++    extensions: number;
++    docsPages: number;
++    adrCount: number;
++    capabilityCount: number;
++    domainCount: number;
++    largeFileCount: number;
++    maxFileLines: number;
++    score: number;
++  };
++  cards: GovernanceSummaryCard[];
++  guardrails: GovernanceGuardrail[];
++  issues: GovernanceIssue[];
++  hotspots: GovernanceHotspot[];
++  domains: GovernanceDomain[];
++  artifacts: GovernanceArtifact[];
++};
++
++export type GovernanceSnapshotResult = {
++  available: boolean;
++  pluginId: string;
++  pluginVersion?: string;
++  repoRoot?: string | null;
++  refreshedAt: string;
++  config: {
++    refreshIntervalMs: number;
++    largeFileLineThreshold: number;
++    hotspotLimit: number;
++  };
++  message?: string;
++  snapshot?: GovernanceSnapshot | null;
++};
++
+ export type {
+   CostUsageDailyEntry,
+   CostUsageSummary,
+diff --git a/ui/src/ui/views/governance.ts b/ui/src/ui/views/governance.ts
+new file mode 100644
+index 000000000..2150e9f86
+--- /dev/null
++++ b/ui/src/ui/views/governance.ts
+@@ -0,0 +1,276 @@
++import { html, nothing } from "lit";
++import { formatRelativeTimestamp } from "../format.ts";
++import type {
++  GovernanceArtifact,
++  GovernanceDomain,
++  GovernanceGuardrail,
++  GovernanceHotspot,
++  GovernanceIssue,
++  GovernanceSnapshotResult,
++} from "../types.ts";
++
++export type GovernanceProps = {
++  loading: boolean;
++  error: string | null;
++  supported: boolean;
++  result: GovernanceSnapshotResult | null;
++  onRefresh: (force?: boolean) => void;
++};
++
++function toneClass(status: "ok" | "warn" | "missing" | "high" | "medium" | "low") {
++  if (status === "ok" || status === "low") {
++    return "ok";
++  }
++  if (status === "warn" || status === "medium") {
++    return "warn";
++  }
++  return "danger";
++}
++
++function renderInstallState(props: GovernanceProps) {
++  return html`
++    <section class="card">
++      <div class="card-title">Governance plugin not loaded</div>
++      <div class="card-sub">
++        Install the optional governance extension to surface repo boundaries, ownership signals, and
++        architecture guardrails inside Control UI.
++      </div>
++      <div class="governance-actions">
++        <button class="btn" @click=${() => props.onRefresh(false)}>Retry detection</button>
++      </div>
++      <div class="governance-codeblock">
++        <div><strong>Local checkout</strong></div>
++        <code>openclaw plugins install ./extensions/governance-dashboard</code>
++      </div>
++      <div class="governance-codeblock">
++        <div><strong>GitHub release asset</strong></div>
++        <code>openclaw plugins install ./openclaw-governance-dashboard.tgz</code>
++      </div>
++    </section>
++  `;
++}
++
++function renderGuardrail(guardrail: GovernanceGuardrail) {
++  return html`
++    <div class="governance-panel">
++      <div class="governance-panel__top">
++        <div class="governance-panel__title">${guardrail.label}</div>
++        <span class="pill ${toneClass(guardrail.status)}">${guardrail.status}</span>
++      </div>
++      <div class="governance-panel__body">${guardrail.detail}</div>
++    </div>
++  `;
++}
++
++function renderIssue(issue: GovernanceIssue) {
++  return html`
++    <div class="governance-issue">
++      <div class="governance-panel__top">
++        <div class="governance-panel__title">${issue.title}</div>
++        <span class="pill ${toneClass(issue.severity)}">${issue.severity}</span>
++      </div>
++      <div class="governance-panel__body">${issue.detail}</div>
++      ${issue.path ? html`<div class="governance-meta mono">${issue.path}</div>` : nothing}
++      ${issue.action ? html`<div class="governance-meta">${issue.action}</div>` : nothing}
++    </div>
++  `;
++}
++
++function renderHotspot(hotspot: GovernanceHotspot) {
++  return html`
++    <div class="governance-list__row">
++      <div>
++        <div class="governance-list__title mono">${hotspot.path}</div>
++        ${hotspot.category ? html`<div class="governance-meta">${hotspot.category}</div>` : nothing}
++      </div>
++      <div class="governance-list__metric">${hotspot.lines} lines</div>
++    </div>
++  `;
++}
++
++function renderDomain(domain: GovernanceDomain) {
++  return html`
++    <div class="governance-panel">
++      <div class="governance-panel__top">
++        <div class="governance-panel__title">${domain.label}</div>
++        ${domain.maturity ? html`<span class="pill">${domain.maturity}</span>` : nothing}
++      </div>
++      ${domain.description ? html`<div class="governance-panel__body">${domain.description}</div>` : nothing}
++      <div class="governance-meta">
++        ${domain.fileCount ?? 0} files
++        ${typeof domain.largeFileCount === "number" ? ` · ${domain.largeFileCount} large files` : ""}
++        ${typeof domain.issueCount === "number" ? ` · ${domain.issueCount} issues` : ""}
++      </div>
++      ${
++        Array.isArray(domain.paths) && domain.paths.length > 0
++          ? html`<div class="governance-tagrow">
++              ${domain.paths.map((entry) => html`<span class="governance-tag mono">${entry}</span>`)}
++            </div>`
++          : nothing
++      }
++      ${
++        Array.isArray(domain.owners) && domain.owners.length > 0
++          ? html`<div class="governance-meta">Owners: ${domain.owners.join(", ")}</div>`
++          : html`
++              <div class="governance-meta">Owners: unassigned</div>
++            `
++      }
++    </div>
++  `;
++}
++
++function renderArtifact(artifact: GovernanceArtifact) {
++  return html`
++    <div class="governance-list__row">
++      <div>
++        <div class="governance-list__title">${artifact.label}</div>
++        <div class="governance-meta mono">${artifact.path}</div>
++      </div>
++      <div class="governance-list__metric">${artifact.kind}</div>
++    </div>
++  `;
++}
++
++export function renderGovernance(props: GovernanceProps) {
++  if (!props.supported) {
++    return renderInstallState(props);
++  }
++
++  const result = props.result;
++  const snapshot = result?.snapshot ?? null;
++  const cards = snapshot?.cards ?? [];
++  const guardrails = snapshot?.guardrails ?? [];
++  const issues = snapshot?.issues ?? [];
++  const hotspots = snapshot?.hotspots ?? [];
++  const domains = snapshot?.domains ?? [];
++  const artifacts = snapshot?.artifacts ?? [];
++  const refreshedAtMs = result ? Date.parse(result.refreshedAt) : Number.NaN;
++
++  return html`
++    <section class="card">
++      <div class="governance-header">
++        <div>
++          <div class="card-title">Governance cockpit</div>
++          <div class="card-sub">
++            ${result?.repoRoot ?? snapshot?.repoRoot ?? "Repo root unresolved"}
++          </div>
++        </div>
++        <div class="governance-actions">
++          <button class="btn" ?disabled=${props.loading} @click=${() => props.onRefresh(false)}>
++            ${props.loading ? "Loading..." : "Refresh cache"}
++          </button>
++          <button class="btn primary" ?disabled=${props.loading} @click=${() => props.onRefresh(true)}>
++            ${props.loading ? "Scanning..." : "Rescan repo"}
++          </button>
++        </div>
++      </div>
++
++      ${
++        props.error
++          ? html`<div class="callout danger"><strong>Load failed.</strong> ${props.error}</div>`
++          : nothing
++      }
++      ${result?.message ? html`<div class="callout warn">${result.message}</div>` : nothing}
++
++      ${
++        result
++          ? html`<div class="governance-meta">
++              plugin ${result.pluginId}${result.pluginVersion ? ` v${result.pluginVersion}` : ""}
++              · refreshed ${Number.isFinite(refreshedAtMs) ? formatRelativeTimestamp(refreshedAtMs) : result.refreshedAt}
++              · threshold ${result.config.largeFileLineThreshold} lines
++            </div>`
++          : nothing
++      }
++    </section>
++
++    ${
++      snapshot
++        ? html`
++            <section class="governance-cards">
++              ${cards.map(
++                (card) => html`
++                  <article class="governance-stat governance-stat--${card.tone ?? "neutral"}">
++                    <div class="governance-stat__label">${card.label}</div>
++                    <div class="governance-stat__value">${card.value}</div>
++                    ${card.helper ? html`<div class="governance-meta">${card.helper}</div>` : nothing}
++                  </article>
++                `,
++              )}
++            </section>
++
++            <section class="governance-grid">
++              <article class="card">
++                <div class="card-title">Guardrails</div>
++                <div class="card-sub">Repository-level checks that define structural hygiene.</div>
++                <div class="governance-stack">
++                  ${guardrails.map((entry) => renderGuardrail(entry))}
++                </div>
++              </article>
++
++              <article class="card">
++                <div class="card-title">Priority issues</div>
++                <div class="card-sub">What currently weakens the governance baseline.</div>
++                ${
++                  issues.length > 0
++                    ? html`<div class="governance-stack">${issues.map((entry) => renderIssue(entry))}</div>`
++                    : html`
++                        <div class="governance-empty">No active governance issues in the latest scan.</div>
++                      `
++                }
++              </article>
++            </section>
++
++            <section class="governance-grid">
++              <article class="card">
++                <div class="card-title">Large-file hotspots</div>
++                <div class="card-sub">Files that are most likely to accumulate coupling.</div>
++                ${
++                  hotspots.length > 0
++                    ? html`<div class="governance-list">${hotspots.map((entry) => renderHotspot(entry))}</div>`
++                    : html`
++                        <div class="governance-empty">No hotspots above the configured threshold.</div>
++                      `
++                }
++              </article>
++
++              <article class="card">
++                <div class="card-title">Governance artifacts</div>
++                <div class="card-sub">Skeleton files detected in the repository.</div>
++                ${
++                  artifacts.length > 0
++                    ? html`<div class="governance-list">${artifacts.map((entry) => renderArtifact(entry))}</div>`
++                    : html`
++                        <div class="governance-empty">No governance artifacts detected yet.</div>
++                      `
++                }
++              </article>
++            </section>
++
++            <section class="card">
++              <div class="card-title">Domain map</div>
++              <div class="card-sub">
++                Bounded contexts that keep growth inside explicit ownership seams.
++              </div>
++              ${
++                domains.length > 0
++                  ? html`<div class="governance-grid">${domains.map((entry) => renderDomain(entry))}</div>`
++                  : html`
++                      <div class="governance-empty">No domain map found. Add governance/domain-map.json.</div>
++                    `
++              }
++            </section>
++          `
++        : html`
++            <section class="card">
++              <div class="governance-empty">
++                ${
++                  props.loading
++                    ? "Governance snapshot is loading."
++                    : "No governance snapshot available yet. Run a repo rescan to seed the dashboard."
++                }
++              </div>
++            </section>
++          `
++    }
++  `;
++}
+diff --git a/vitest.config.ts b/vitest.config.ts
+index caf288a7b..2f3a6ab9b 100644
+--- a/vitest.config.ts
++++ b/vitest.config.ts
+@@ -89,6 +89,7 @@ export default defineConfig({
+       "ui/src/ui/controllers/agents.test.ts",
+       "ui/src/ui/controllers/agent-dashboard-runtime.test.ts",
+       "ui/src/ui/controllers/chat.test.ts",
++      "ui/src/ui/controllers/governance.test.ts",
+       "ui/src/ui/controllers/skills.test.ts",
+       "ui/src/ui/navigation.test.ts",
+     ],

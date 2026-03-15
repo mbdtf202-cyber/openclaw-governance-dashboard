@@ -1,0 +1,50 @@
+{
+  "name": "openclaw-governance-dashboard",
+  "version": "0.1.0",
+  "description": "Standalone governance dashboard plugin for OpenClaw",
+  "license": "MIT",
+  "type": "module",
+  "files": [
+    "index.ts",
+    "openclaw.plugin.json",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "src/config.ts",
+    "src/runtime.ts",
+    "src/scanner.ts",
+    "src/types.ts",
+    "templates/**/*",
+    "integrations/openclaw-core/openclaw-governance-dashboard.patch"
+  ],
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "governance",
+    "dashboard",
+    "architecture"
+  ],
+  "homepage": "https://github.com/mbdtf202-cyber/openclaw-governance-dashboard",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mbdtf202-cyber/openclaw-governance-dashboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mbdtf202-cyber/openclaw-governance-dashboard/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^24.5.2",
+    "typescript": "^5.9.2",
+    "vitest": "^4.0.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "pack:plugin": "npm pack --json",
+    "release:package": "bash scripts/release-plugin.sh"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

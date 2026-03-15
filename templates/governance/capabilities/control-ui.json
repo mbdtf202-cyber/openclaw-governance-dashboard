@@ -1,0 +1,8 @@
+{
+  "id": "control-ui",
+  "label": "Control UI",
+  "description": "Operator dashboard, Control UI views, controllers, and dashboard-specific workflows.",
+  "owners": ["team:ux"],
+  "maturity": "supported",
+  "paths": ["ui", "src/gateway/control-ui.ts", "src/gateway/server-methods"]
+}

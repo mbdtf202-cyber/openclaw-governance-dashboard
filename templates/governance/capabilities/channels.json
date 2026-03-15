@@ -1,0 +1,16 @@
+{
+  "id": "channels",
+  "label": "Messaging Channels",
+  "description": "Built-in and extension channel surfaces sharing routing, access, and delivery behavior.",
+  "owners": ["team:channels"],
+  "maturity": "supported",
+  "paths": [
+    "src/channels",
+    "src/telegram",
+    "src/discord",
+    "src/slack",
+    "src/signal",
+    "src/imessage",
+    "extensions"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "domains": [
+    {
+      "id": "kernel",
+      "label": "Kernel",
+      "description": "Gateway protocol, config, plugins runtime, process control, and security boundaries.",
+      "maturity": "stable",
+      "owners": ["team:platform"],
+      "paths": ["src/gateway", "src/config", "src/plugins", "src/process", "src/security"]
+    },
+    {
+      "id": "agents-runtime",
+      "label": "Agents Runtime",
+      "description": "Agent execution, tools, hooks, sessions, and durable task runtime.",
+      "maturity": "supported",
+      "owners": ["team:agents"],
+      "paths": ["src/agents", "src/tasks", "src/hooks", "src/sessions", "src/cron"]
+    },
+    {
+      "id": "channels",
+      "label": "Channels",
+      "description": "Shared channel contracts plus built-in and extension messaging surfaces.",
+      "maturity": "supported",
+      "owners": ["team:channels"],
+      "paths": [
+        "src/channels",
+        "src/telegram",
+        "src/discord",
+        "src/slack",
+        "src/signal",
+        "src/imessage",
+        "src/web",
+        "extensions"
+      ]
+    },
+    {
+      "id": "surfaces",
+      "label": "Surfaces",
+      "description": "Operator-facing UI and command surfaces.",
+      "maturity": "supported",
+      "owners": ["team:ux"],
+      "paths": ["src/cli", "src/commands", "ui", "apps"]
+    },
+    {
+      "id": "experiments",
+      "label": "Experiments",
+      "description": "Proposal kits, packaged workspaces, and incubating product directions.",
+      "maturity": "experimental",
+      "owners": ["team:incubation"],
+      "paths": ["docs/experiments", "templates", "skills"]
+    }
+  ]
+}

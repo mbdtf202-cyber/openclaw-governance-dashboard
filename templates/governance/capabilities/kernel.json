@@ -1,0 +1,8 @@
+{
+  "id": "kernel",
+  "label": "Platform Kernel",
+  "description": "Stable substrate for protocol, config, plugin runtime, and security policy.",
+  "owners": ["team:platform"],
+  "maturity": "stable",
+  "paths": ["src/gateway", "src/config", "src/plugins", "src/process", "src/security"]
+}

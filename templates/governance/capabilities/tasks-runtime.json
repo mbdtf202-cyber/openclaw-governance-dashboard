@@ -1,0 +1,8 @@
+{
+  "id": "tasks-runtime",
+  "label": "Durable Tasks Runtime",
+  "description": "Task lifecycle, wake strategies, progress tracking, and long-running execution control.",
+  "owners": ["team:agents"],
+  "maturity": "supported",
+  "paths": ["src/tasks", "src/cron", "src/agents/tools/task-tool.ts", "ui/src/ui/views/tasks.ts"]
+}
