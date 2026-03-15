@@ -1,7 +1,11 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import type { OpenClawPluginService, PluginLogger } from "openclaw/plugin-sdk/core";
-import { resolveOpenClawRepoRoot, scanGovernanceSnapshot } from "./scanner.js";
+import {
+  computeGovernanceRepoFingerprint,
+  resolveOpenClawRepoRoot,
+  scanGovernanceSnapshot,
+} from "./scanner.js";
 import type {
   GovernancePluginConfig,
   GovernanceSnapshot,
@@ -16,9 +20,10 @@ type RuntimeParams = {
   pluginSourcePath: string;
 };
 
-type ServiceStartContext = {
-  workspaceDir?: string;
-  stateDir: string;
+type GovernanceCachePayload = {
+  fingerprint: string | null;
+  lastSuccessfulScanAt: string | null;
+  snapshot: GovernanceSnapshot;
 };
 
 function buildResult(params: {
@@ -28,6 +33,8 @@ function buildResult(params: {
   repoRoot?: string | null;
   config: GovernancePluginConfig;
   snapshot?: GovernanceSnapshot | null;
+  lastSuccessfulScanAt?: string | null;
+  stale?: boolean;
   message?: string;
 }): GovernanceSnapshotResult {
   return {
@@ -36,6 +43,8 @@ function buildResult(params: {
     pluginVersion: params.pluginVersion,
     repoRoot: params.repoRoot ?? params.snapshot?.repoRoot ?? null,
     refreshedAt: params.snapshot?.generatedAt ?? new Date().toISOString(),
+    lastSuccessfulScanAt: params.lastSuccessfulScanAt ?? params.snapshot?.generatedAt ?? null,
+    stale: params.stale === true,
     config: {
       refreshIntervalMs: params.config.refreshIntervalMs,
       largeFileLineThreshold: params.config.largeFileLineThreshold,
@@ -51,6 +60,8 @@ export function createGovernanceRuntime(params: RuntimeParams): {
   getSnapshot: (opts?: { force?: boolean }) => Promise<GovernanceSnapshotResult>;
 } {
   let latestSnapshot: GovernanceSnapshot | null = null;
+  let latestFingerprint: string | null = null;
+  let lastSuccessfulScanAt: string | null = null;
   let workspaceDir: string | undefined;
   let cachePath: string | null = null;
   let refreshPromise: Promise<GovernanceSnapshotResult> | null = null;
@@ -61,7 +72,12 @@ export function createGovernanceRuntime(params: RuntimeParams): {
       return;
     }
     await fs.mkdir(path.dirname(cachePath), { recursive: true });
-    await fs.writeFile(cachePath, JSON.stringify(latestSnapshot, null, 2), "utf8");
+    const payload: GovernanceCachePayload = {
+      fingerprint: latestFingerprint,
+      lastSuccessfulScanAt,
+      snapshot: latestSnapshot,
+    };
+    await fs.writeFile(cachePath, JSON.stringify(payload, null, 2), "utf8");
   };
 
   const hydrateCache = async () => {
@@ -70,9 +86,32 @@ export function createGovernanceRuntime(params: RuntimeParams): {
     }
     try {
       const raw = await fs.readFile(cachePath, "utf8");
-      latestSnapshot = JSON.parse(raw) as GovernanceSnapshot;
+      const parsed = JSON.parse(raw) as GovernanceCachePayload | GovernanceSnapshot;
+      if (
+        parsed &&
+        typeof parsed === "object" &&
+        "snapshot" in parsed &&
+        parsed.snapshot &&
+        typeof parsed.snapshot === "object"
+      ) {
+        latestSnapshot = parsed.snapshot as GovernanceSnapshot;
+        latestFingerprint =
+          typeof parsed.fingerprint === "string" && parsed.fingerprint.trim()
+            ? parsed.fingerprint
+            : null;
+        lastSuccessfulScanAt =
+          typeof parsed.lastSuccessfulScanAt === "string" && parsed.lastSuccessfulScanAt.trim()
+            ? parsed.lastSuccessfulScanAt
+            : latestSnapshot.generatedAt;
+        return;
+      }
+      latestSnapshot = parsed as GovernanceSnapshot;
+      latestFingerprint = null;
+      lastSuccessfulScanAt = latestSnapshot.generatedAt;
     } catch {
       latestSnapshot = latestSnapshot ?? null;
+      latestFingerprint = latestFingerprint ?? null;
+      lastSuccessfulScanAt = lastSuccessfulScanAt ?? latestSnapshot?.generatedAt ?? null;
     }
   };
 
@@ -83,16 +122,8 @@ export function createGovernanceRuntime(params: RuntimeParams): {
         pluginId: params.pluginId,
         pluginVersion: params.pluginVersion,
         config: params.config,
+        lastSuccessfulScanAt,
         message: "Governance dashboard is disabled in plugin config.",
-      });
-    }
-    if (!force && latestSnapshot) {
-      return buildResult({
-        available: true,
-        pluginId: params.pluginId,
-        pluginVersion: params.pluginVersion,
-        config: params.config,
-        snapshot: latestSnapshot,
       });
     }
     if (refreshPromise) {
@@ -113,26 +144,71 @@ export function createGovernanceRuntime(params: RuntimeParams): {
           config: params.config,
           repoRoot: null,
           snapshot: latestSnapshot,
+          lastSuccessfulScanAt,
+          stale: latestSnapshot !== null,
           message:
             "OpenClaw repo root could not be resolved automatically. Set plugins.entries.governance-dashboard.config.repoRoot to scan a checkout explicitly.",
         });
       }
 
-      latestSnapshot = await scanGovernanceSnapshot({
+      const fingerprint = await computeGovernanceRepoFingerprint({
         repoRoot,
         config: params.config,
-        log: params.logger,
-      });
-      await persistSnapshot().catch((err) => {
-        params.logger.warn?.(`[governance-dashboard] failed to persist snapshot: ${String(err)}`);
-      });
-      return buildResult({
-        available: true,
-        pluginId: params.pluginId,
-        pluginVersion: params.pluginVersion,
-        config: params.config,
-        snapshot: latestSnapshot,
-      });
+      }).catch(() => null);
+      if (
+        !force &&
+        latestSnapshot &&
+        latestFingerprint &&
+        fingerprint?.value &&
+        fingerprint.value === latestFingerprint
+      ) {
+        return buildResult({
+          available: true,
+          pluginId: params.pluginId,
+          pluginVersion: params.pluginVersion,
+          config: params.config,
+          repoRoot,
+          snapshot: latestSnapshot,
+          lastSuccessfulScanAt,
+        });
+      }
+
+      try {
+        latestSnapshot = await scanGovernanceSnapshot({
+          repoRoot,
+          config: params.config,
+          log: params.logger,
+        });
+        latestFingerprint = fingerprint?.value ?? latestFingerprint;
+        lastSuccessfulScanAt = latestSnapshot.generatedAt;
+        await persistSnapshot().catch((err) => {
+          params.logger.warn?.(`[governance-dashboard] failed to persist snapshot: ${String(err)}`);
+        });
+        return buildResult({
+          available: true,
+          pluginId: params.pluginId,
+          pluginVersion: params.pluginVersion,
+          config: params.config,
+          snapshot: latestSnapshot,
+          lastSuccessfulScanAt,
+        });
+      } catch (error) {
+        if (!latestSnapshot) {
+          throw error;
+        }
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        return buildResult({
+          available: true,
+          pluginId: params.pluginId,
+          pluginVersion: params.pluginVersion,
+          config: params.config,
+          repoRoot,
+          snapshot: latestSnapshot,
+          lastSuccessfulScanAt,
+          stale: true,
+          message: `Showing cached snapshot because the latest governance scan failed: ${errorMessage}`,
+        });
+      }
     })().finally(() => {
       refreshPromise = null;
     });
@@ -152,7 +228,7 @@ export function createGovernanceRuntime(params: RuntimeParams): {
 
       if (params.config.refreshIntervalMs > 0) {
         refreshInterval = setInterval(() => {
-          void refresh(true).catch((err) => {
+          void refresh(false).catch((err) => {
             params.logger.warn?.(`[governance-dashboard] scheduled scan failed: ${String(err)}`);
           });
         }, params.config.refreshIntervalMs);

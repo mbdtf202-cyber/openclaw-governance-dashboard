@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.2
+
+- Distinguish missing versus invalid governance artifacts instead of silently swallowing parse failures.
+- Fix domain large-file summaries to use the full scan result rather than the truncated hotspot list.
+- Ignore generated output during filesystem fallback scans and add repo fingerprint caching to avoid unnecessary rescans.
+- Add stale-snapshot metadata and scan-cost telemetry to the governance RPC surface.
+- Expand plugin tests to cover invalid JSON, fallback scanning, rescans, and stale cache behavior.
+
 ## 0.1.1
 
 - Validate OpenClaw core patch applicability in CI and release flow.

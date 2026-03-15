@@ -2,7 +2,7 @@
   "id": "governance-dashboard",
   "name": "Governance Dashboard",
   "description": "Repo governance scanner and Control UI cockpit for OpenClaw",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "uiHints": {
     "enabled": {
       "label": "Enable Governance Dashboard",
@@ -29,9 +29,9 @@
       "help": "Maximum number of hotspots shown in the dashboard snapshot.",
       "advanced": true
     },
-    "focusPaths": {
-      "label": "Focus Paths",
-      "help": "Top-level repo paths scanned for large-file hotspot analysis.",
+    "codePaths": {
+      "label": "Code Paths",
+      "help": "Top-level repo code paths scanned for hotspot analysis. Generated output is ignored.",
       "advanced": true
     }
   },
@@ -56,6 +56,12 @@
       "hotspotLimit": {
         "type": "integer",
         "minimum": 1
+      },
+      "codePaths": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
       },
       "focusPaths": {
         "type": "array",

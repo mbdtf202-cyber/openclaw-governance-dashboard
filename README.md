@@ -17,7 +17,9 @@ The plugin scans an OpenClaw checkout and surfaces:
 - capability registry coverage
 - ADR presence
 - large-file hotspots
-- missing ownership signals
+- missing or invalid ownership signals
+- stale-snapshot state when scans fail
+- scan-cost telemetry for analyzed files and duration
 
 ## Product shape
 
@@ -84,6 +86,11 @@ When possible, the scaffold derives the CODEOWNERS owner from the target repo's
 
 - Node 22+
 - OpenClaw `>= 2026.3.15`
+
+## Config note
+
+New configs should use `codePaths` for hotspot analysis. Legacy `focusPaths`
+is still accepted as an alias for compatibility.
 
 ## Local validation
 

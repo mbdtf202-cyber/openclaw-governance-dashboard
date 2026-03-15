@@ -42,7 +42,7 @@ describe("governance-dashboard plugin", () => {
 
     plugin.register({
       pluginConfig: {},
-      version: "0.1.1",
+      version: "0.1.2",
       source: path.join(repoRoot, "index.ts"),
       logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
       registerService: (entry) => {

@@ -1,6 +1,6 @@
 import type { GovernancePluginConfig } from "./types.js";
 
-const DEFAULT_FOCUS_PATHS = ["src", "extensions", "ui", "packages", "scripts", "docs"];
+const DEFAULT_CODE_PATHS = ["src", "extensions", "ui", "packages", "scripts", "apps"];
 
 function readTrimmedString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
@@ -29,6 +29,7 @@ export function resolveGovernancePluginConfig(value: unknown): GovernancePluginC
     value && typeof value === "object" && !Array.isArray(value)
       ? (value as Record<string, unknown>)
       : {};
+  const legacyFocusPaths = readStringArray(raw.focusPaths, []);
 
   return {
     enabled: typeof raw.enabled === "boolean" ? raw.enabled : true,
@@ -36,7 +37,10 @@ export function resolveGovernancePluginConfig(value: unknown): GovernancePluginC
     refreshIntervalMs: readPositiveInteger(raw.refreshIntervalMs, 5 * 60_000),
     largeFileLineThreshold: readPositiveInteger(raw.largeFileLineThreshold, 500),
     hotspotLimit: readPositiveInteger(raw.hotspotLimit, 12),
-    focusPaths: readStringArray(raw.focusPaths, DEFAULT_FOCUS_PATHS),
+    codePaths: readStringArray(
+      raw.codePaths,
+      legacyFocusPaths.length > 0 ? legacyFocusPaths : DEFAULT_CODE_PATHS,
+    ),
   };
 }
 
@@ -68,9 +72,9 @@ export const governancePluginConfigSchema = {
       help: "Maximum number of hotspots shown in the dashboard snapshot.",
       advanced: true,
     },
-    focusPaths: {
-      label: "Focus Paths",
-      help: "Top-level repo paths scanned for large-file hotspot analysis.",
+    codePaths: {
+      label: "Code Paths",
+      help: "Top-level repo code paths scanned for hotspot analysis. Generated output is ignored.",
       advanced: true,
     },
   },
@@ -83,6 +87,10 @@ export const governancePluginConfigSchema = {
       refreshIntervalMs: { type: "integer", minimum: 1 },
       largeFileLineThreshold: { type: "integer", minimum: 1 },
       hotspotLimit: { type: "integer", minimum: 1 },
+      codePaths: {
+        type: "array",
+        items: { type: "string" },
+      },
       focusPaths: {
         type: "array",
         items: { type: "string" },

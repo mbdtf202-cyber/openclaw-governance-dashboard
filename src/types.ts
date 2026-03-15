@@ -4,8 +4,12 @@ export type GovernancePluginConfig = {
   refreshIntervalMs: number;
   largeFileLineThreshold: number;
   hotspotLimit: number;
-  focusPaths: string[];
+  codePaths: string[];
 };
+
+export type GovernanceGuardrailStatus = "ok" | "warn" | "missing" | "invalid";
+
+export type GovernanceArtifactStatus = "ok" | "invalid";
 
 export type GovernanceSummaryCard = {
   id: string;
@@ -18,7 +22,7 @@ export type GovernanceSummaryCard = {
 export type GovernanceGuardrail = {
   id: string;
   label: string;
-  status: "ok" | "warn" | "missing";
+  status: GovernanceGuardrailStatus;
   detail: string;
 };
 
@@ -72,6 +76,8 @@ export type GovernanceArtifact = {
   label: string;
   path: string;
   kind: "domain-map" | "capability" | "adr" | "script";
+  status?: GovernanceArtifactStatus;
+  detail?: string;
 };
 
 export type GovernanceSnapshot = {
@@ -87,6 +93,8 @@ export type GovernanceSnapshot = {
     domainCount: number;
     largeFileCount: number;
     maxFileLines: number;
+    analyzedFileCount: number;
+    scanDurationMs: number;
     score: number;
   };
   cards: GovernanceSummaryCard[];
@@ -103,6 +111,8 @@ export type GovernanceSnapshotResult = {
   pluginVersion?: string;
   repoRoot?: string | null;
   refreshedAt: string;
+  lastSuccessfulScanAt?: string | null;
+  stale?: boolean;
   config: {
     refreshIntervalMs: number;
     largeFileLineThreshold: number;
