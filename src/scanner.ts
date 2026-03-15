@@ -226,6 +226,7 @@ async function collectHotspots(
   limit: number,
 ): Promise<{
   hotspots: GovernanceHotspot[];
+  largeFiles: GovernanceHotspot[];
   totalLargeFileCount: number;
   maxFileLines: number;
 }> {
@@ -241,6 +242,7 @@ async function collectHotspots(
 
   return {
     hotspots: filtered.slice(0, limit),
+    largeFiles: filtered,
     totalLargeFileCount: filtered.length,
     maxFileLines: filtered[0]?.lines ?? 0,
   };
@@ -497,13 +499,13 @@ function buildIssues(params: {
 function summarizeDomains(params: {
   domains: GovernanceDomainRecord[];
   repoFiles: string[];
-  hotspots: GovernanceHotspot[];
+  largeFiles: GovernanceHotspot[];
 }): GovernanceDomainSummary[] {
   return params.domains.map((domain) => {
     const fileCount = params.repoFiles.filter((file) =>
       domain.paths.some((prefix) => file === prefix || file.startsWith(`${prefix}/`)),
     ).length;
-    const largeFileCount = params.hotspots.filter((entry) =>
+    const largeFileCount = params.largeFiles.filter((entry) =>
       domain.paths.some((prefix) => entry.path === prefix || entry.path.startsWith(`${prefix}/`)),
     ).length;
     const issueCount = (domain.owners && domain.owners.length > 0 ? 0 : 1) + largeFileCount;
@@ -560,6 +562,7 @@ export async function scanGovernanceSnapshot(params: {
     params.config.hotspotLimit,
   );
   const hotspots = hotspotSummary.hotspots;
+  const largeFiles = hotspotSummary.largeFiles;
   const guardrails = summarizeGuardrails({
     repoFiles,
     adrCount: adrFiles.length,
@@ -613,7 +616,7 @@ export async function scanGovernanceSnapshot(params: {
     guardrails,
     issues,
     hotspots,
-    domains: summarizeDomains({ domains, repoFiles, hotspots }),
+    domains: summarizeDomains({ domains, repoFiles, largeFiles }),
     artifacts: buildArtifacts({ repoFiles, capabilityFiles, adrFiles }),
   };
 }

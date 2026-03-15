@@ -5,8 +5,9 @@ ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 DIST_DIR="$ROOT_DIR/dist"
 README_OUT="$DIST_DIR/release.README.md"
 PATCH_PATH="$ROOT_DIR/integrations/openclaw-core/openclaw-governance-dashboard.patch"
+PACKAGE_VERSION="$(node -p "require('$ROOT_DIR/package.json').version")"
 REPO="${GITHUB_REPOSITORY:-mbdtf202-cyber/openclaw-governance-dashboard}"
-TAG="${GITHUB_REF_NAME:-v0.1.0}"
+TAG="${GITHUB_REF_NAME:-v$PACKAGE_VERSION}"
 
 mkdir -p "$DIST_DIR"
 

@@ -113,4 +113,53 @@ describe("scanGovernanceSnapshot", () => {
     expect(snapshot.guardrails.find((entry) => entry.id === "codeowners")?.status).toBe("missing");
     expect(snapshot.issues.some((entry) => entry.id === "missing-codeowners")).toBe(true);
   });
+
+  it("counts domain large files using the full hotspot set, not only the display limit", async () => {
+    const root = await makeRepoFixture();
+    await fs.writeFile(
+      path.join(root, "governance", "domain-map.json"),
+      JSON.stringify(
+        {
+          version: 1,
+          domains: [
+            { id: "kernel", label: "Kernel", owners: ["team:platform"], paths: ["src"] },
+            { id: "ui", label: "UI", owners: ["team:ux"], paths: ["ui"] },
+          ],
+        },
+        null,
+        2,
+      ),
+      "utf8",
+    );
+    await fs.mkdir(path.join(root, "src", "kernel"), { recursive: true });
+    await fs.mkdir(path.join(root, "ui"), { recursive: true });
+    for (const filePath of [
+      path.join(root, "src", "kernel", "a.ts"),
+      path.join(root, "src", "kernel", "b.ts"),
+      path.join(root, "ui", "a.ts"),
+    ]) {
+      await fs.writeFile(
+        filePath,
+        `${Array.from({ length: 620 }, (_, index) => `export const line${index} = ${index};`).join("\n")}\n`,
+        "utf8",
+      );
+    }
+
+    const snapshot = await scanGovernanceSnapshot({
+      repoRoot: root,
+      config: {
+        enabled: true,
+        refreshIntervalMs: 1000,
+        largeFileLineThreshold: 500,
+        hotspotLimit: 1,
+        focusPaths: ["src", "ui"],
+      },
+    });
+
+    expect(snapshot.summary.largeFileCount).toBe(4);
+    const kernel = snapshot.domains.find((entry) => entry.id === "kernel");
+    const ui = snapshot.domains.find((entry) => entry.id === "ui");
+    expect(kernel?.largeFileCount).toBe(3);
+    expect(ui?.largeFileCount).toBe(1);
+  });
 });

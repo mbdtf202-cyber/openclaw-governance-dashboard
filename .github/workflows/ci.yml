@@ -19,7 +19,10 @@ jobs:
           cache: npm
 
       - name: Install
-        run: npm install
+        run: npm ci
 
       - name: Test
         run: npm test
+
+      - name: Check OpenClaw patch applicability
+        run: bash scripts/check-openclaw-patch.sh

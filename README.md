@@ -38,7 +38,7 @@ It includes:
 After downloading a release asset:
 
 ```bash
-openclaw plugins install ./openclaw-governance-dashboard-0.1.0.tgz
+openclaw plugins install ./<downloaded-release-asset>.tgz
 ```
 
 Restart the OpenClaw gateway afterwards.
@@ -73,6 +73,12 @@ That seeds:
 - `governance/domain-map.json`
 - `governance/capabilities/*.json`
 - `docs/adr/0001-repo-governance-foundation.md`
+- `.github/CODEOWNERS`
+- `.github/labeler.yml`
+
+Existing files are skipped by default. Pass `--force` to overwrite them.
+When possible, the scaffold derives the CODEOWNERS owner from the target repo's
+`origin` remote.
 
 ## Requirements
 
@@ -82,8 +88,9 @@ That seeds:
 ## Local validation
 
 ```bash
-npm install
+npm ci
 npm test
+bash scripts/check-openclaw-patch.sh
 bash scripts/release-plugin.sh
 ```
 

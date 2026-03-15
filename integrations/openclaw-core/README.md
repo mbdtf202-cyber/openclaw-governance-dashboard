@@ -16,3 +16,9 @@ Recommended flow:
 3. Install the plugin release asset.
 4. Restart the gateway.
 5. Open the `Governance` tab.
+
+To validate the patch against upstream OpenClaw without applying it, run:
+
+```bash
+bash scripts/check-openclaw-patch.sh
+```

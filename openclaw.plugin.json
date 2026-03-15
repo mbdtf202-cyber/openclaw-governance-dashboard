@@ -2,7 +2,7 @@
   "id": "governance-dashboard",
   "name": "Governance Dashboard",
   "description": "Repo governance scanner and Control UI cockpit for OpenClaw",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "uiHints": {
     "enabled": {
       "label": "Enable Governance Dashboard",

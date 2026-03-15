@@ -1,0 +1,9 @@
+"governance":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "governance/**"
+          - "docs/adr/**"
+"extensions: governance-dashboard":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "extensions/governance-dashboard/**"

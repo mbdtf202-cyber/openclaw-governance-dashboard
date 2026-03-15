@@ -1,0 +1,8 @@
+# Replace __OWNER__ with the GitHub user or team responsible for governance.
+#
+# This file is intentionally minimal so it can be layered into an existing
+# OpenClaw checkout without fighting broader ownership rules.
+
+/governance/ __OWNER__
+/docs/adr/ __OWNER__
+/extensions/governance-dashboard/ __OWNER__

@@ -13,7 +13,7 @@ const plugin = {
       config,
       logger: api.logger,
       pluginId: "governance-dashboard",
-      pluginVersion: api.version ?? "0.1.0",
+      pluginVersion: api.version ?? "0.1.1",
       pluginSourcePath: api.source,
     });
 
